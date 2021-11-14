@@ -6,9 +6,8 @@ The original code was made in Spyder. To avoid any issues with compiling, I stro
 
 PLEASE TRY TO FOLLOW THESE GUIDELINES!
 - The code is broken into various cells; ONLY update the cells you changed! That way we all know what the most recent changes were and who made them
-
 - if you change something, please add comments so we're all on the same page
-
 - if you add a new cell, please add comments so we all know what the code does
+- when you make a change, please consider shooting a message on Discord (under the 'project' channel) so everyone can work with the most updated version of the project
 
 Happy coding :)
