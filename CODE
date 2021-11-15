@@ -39,8 +39,6 @@ delay_filled = imp_mean.transform(X1)
 
 #%%
 
-# THIS DOESN'T WORK YET!!
-
 # IMPUTATION PART 2
 # For the columns below, replace NaN values with mean imputed value
 # will make a separate numpy array with new values - 'time_stats_filled'
