@@ -66,6 +66,29 @@ df['SECURITY_DELAY'] = values
 values = delay_filled[:,4]
 df['LATE_AIRCRAFT_DELAY'] = values
 
+#-------------
+
+values = time_stats_filled[:,0]
+df['DEP_DELAY'] = values
+
+values = time_stats_filled[:,1]
+df['TAXI_OUT'] = values
+
+values = time_stats_filled[:,2]
+df['WHEELS_OFF'] = values
+
+values = time_stats_filled[:,3]
+df['WHEELS_ON'] = values
+
+values = time_stats_filled[:,4]
+df['TAXI_IN'] = values
+
+values = time_stats_filled[:,5]
+df['AIR_TIME'] = values
+
+values = time_stats_filled[:,6]
+df['ARR_DELAY'] = values
+
 #%%
 
 # shows the amount and percentage of missing values after imputation and replacement
@@ -90,9 +113,22 @@ for i in columns:
 indexNames = df[df['CANCELLATION_CODE'].notnull()].index
 df.drop(indexNames, inplace=True)
 
+# Remove entries for null departure time and arrival time
+df.dropna(subset=['DEP_TIME', 'ARR_TIME'])
+
 # Remove entries for diverted flights
 indexNames = df[df['DIVERTED'] == 1].index
 df.drop(indexNames, inplace=True)
+
+#%%
+# shows the amount and percentage of missing values after imputation and replacement
+# labelled 'missing_df3'
+
+missing_df3 = df.isnull().sum(axis=0).reset_index()
+missing_df3.columns = ['variable', 'missing values']
+missing_df3['filling factor (%)']=(df.shape[0]-missing_df3['missing values'])/df.shape[0]*100
+missing_df3.sort_values('filling factor (%)').reset_index(drop = True)
+
 
 #%%
 
@@ -189,14 +225,18 @@ df.rename(columns={"FL_DATE" : "DATE",
           errors="raise")
 
 #%%
+# split date (currently in YYYY-MM-DD format) into separate Year, Month, and Day columns
+df[['Year','Month','Day']] = df.FL_DATE.str.split("-",expand=True,)
+
+#%%
 
 # last check of amount and percentage of missing values - should be all 0/100%
 # labelled 'missing_df3'
 
-missing_df3 = df.isnull().sum(axis=0).reset_index()
-missing_df3.columns = ['variable', 'missing values']
-missing_df3['filling factor (%)']=(df.shape[0]-missing_df3['missing values'])/df.shape[0]*100
-missing_df3.sort_values('filling factor (%)').reset_index(drop = True)
+missing_df4 = df.isnull().sum(axis=0).reset_index()
+missing_df4.columns = ['variable', 'missing values']
+missing_df4['filling factor (%)']=(df.shape[0]-missing_df4['missing values'])/df.shape[0]*100
+missing_df4.sort_values('filling factor (%)').reset_index(drop = True)
 
 
 #%%
@@ -327,6 +367,7 @@ plt.show()
 #%%
 
 ### MODELING HERE WE GOOOOO
+# Datacamp logistic regression: https://www.datacamp.com/community/tutorials/understanding-logistic-regression-python
 
 ## MODEL 1 - classification - on time or delayed
 # By DoT definition, any flight is delayed if it departs more than 15 minutes past schedule
@@ -334,18 +375,41 @@ plt.show()
 # make a subset of the data with carrier and arrival delay
 # convert the arrival delay values to two values: on_time if <= 15, delay if >15
 
-df_subset = df[['CARRIER_NAME','ARR_DELAY']]
-df_subset.loc[df['ARR_DELAY'] > 15, 'ARR_DELAY'] = 'delay'
-df_subset.loc[df['ARR_DELAY'] <= 15, 'ARR_DELAY'] = 'on_time'
+classification = df[['ARR_DELAY']]
+
+classification['ARR_DELAY'] = classification['ARR_DELAY'].where(classification['ARR_DELAY'] > 15,other='on_time')
+classification['ARR_DELAY'] = classification['ARR_DELAY'].where(classification['ARR_DELAY'] == 'on_time',other='delay')
+
+df['classifier_1'] = classification
 
 #%%
 
-from sklearn.linear_model import LogisticRegression
-X, y = load_iris(return_X_y=True)
-clf = LogisticRegression(random_state=0).fit(X, y)
-clf.predict(X[:2, :])
+feature_cols = ['Day','Month','Year','CRS_ELAPSED_TIME','AIR_TIME', 'DEP_DELAY','ARR_DELAY']
+df.dropna()
+X = df[feature_cols]
+y = df.classifier_1
 
-clf.predict_proba(X[:2, :])
+#%%
+
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
+
+#%%
+
+# instantiate the model (using the default parameters)
+logreg = LogisticRegression()
+
+# fit the model with data
+logreg.fit(X_train,y_train)
+
+#
+y_pred=logreg.predict(X_test)
+
+#%%
 
 
-clf.score(X, y)
+cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+
+print(cnf_matrix)
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+print("Precision:",metrics.precision_score(y_test, y_pred))
+print("Recall:",metrics.recall_score(y_test, y_pred))
