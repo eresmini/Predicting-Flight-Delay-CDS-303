@@ -16,6 +16,12 @@ df = df_concat[pd.notnull(df_concat['OP_CARRIER'])]
 df = df.drop(['Unnamed: 27'], axis=1)
 
 #%%
+# information on dataset - data types, etc.
+
+df_info = df.info()
+
+
+#%%
 
 # shows the amount and percentage of missing values - labelled 'missing_df1'
 # we will have a few of these checks!
@@ -24,6 +30,7 @@ missing_df1 = df.isnull().sum(axis=0).reset_index()
 missing_df1.columns = ['variable', 'missing values']
 missing_df1['filling factor (%)']=(df.shape[0]-missing_df1['missing values'])/df.shape[0]*100
 missing_df1.sort_values('filling factor (%)').reset_index(drop = True)
+
 
 #%%
 
@@ -103,7 +110,7 @@ missing_df2.sort_values('filling factor (%)').reset_index(drop = True)
 ### DROPPING ROWS
 
 # Remove entries (rows) for flights with delays caused by NAS or security
-### REMOVE WEATHER LATER
+# prof seemed to really want us to include weather...so we'll keep it in. Better safe than sorry.
 columns = ['NAS_DELAY', 'SECURITY_DELAY']
 for i in columns:
     indexNames = df[df[i] > 0].index
@@ -115,10 +122,6 @@ df.drop(indexNames, inplace=True)
 
 # Remove entries for null departure time and arrival time
 df.dropna(subset=['DEP_TIME', 'ARR_TIME'])
-
-# Remove entries for diverted flights
-indexNames = df[df['DIVERTED'] == 1].index
-df.drop(indexNames, inplace=True)
 
 #%%
 # shows the amount and percentage of missing values after imputation and replacement
@@ -160,32 +163,37 @@ missing_df3.sort_values('filling factor (%)').reset_index(drop = True)
 
 ######
 
-decoded = df.replace({'OP_CARRIER' : {'XE' : 'ExpressJet Airlines',
-                                      'YV' : 'Mesa Airlines',
-                                      'NW' : 'Northwest Airlines',
-                                      'OH' : 'PSA Airlines',
-                                      'OO' : 'SkyWest Airlines',
-                                      'UA' : 'United Airlines',
-                                      'US' : 'US Airways',
-                                      'WN' : 'Southwest Airlines',
-                                      'EV' : 'Atlantic Southeast Airlines',
-                                      'F9' : 'Frontier Airlines',
-                                      'FL' : 'AirTran Airways',
-                                      'HA' : 'Hawaiian Airlines',
-                                      'MQ' : 'Envoy Air',
-                                      '9E' : 'Endeavor Air',
-                                      'AA' : 'American Airlines',
-                                      'AS' : 'Alaska Airlines',
-                                      'B6' : 'JetBlue Airways',
-                                      'CO' : 'Continental Airlines',
-                                      'DL' : 'Delta Air Lines',
-                                      'VX' : 'Virgin America',
-                                      'NK' : 'Spirit Airlines',
-                                      'G4' : 'Allegiant Air',
-                                      'YX' : 'Republic Airways'}})
+# found a more efficient way to do this!
 
-decoded = decoded['OP_CARRIER']
-df['CARRIER_NAME'] = decoded
+df['IATA'] = df['OP_CARRIER'] # create new column with the IATA code (named as such)
+
+# with the old/existing OP_CARRIER column, change the IATA code to the actual airline name
+# runs faster than previous version I had
+df['OP_CARRIER'].replace({
+    'XE' : 'ExpressJet Airlines',
+    'YV' : 'Mesa Airlines',
+    'NW' : 'Northwest Airlines',
+    'OH' : 'PSA Airlines',
+    'OO' : 'SkyWest Airlines',
+    'UA' : 'United Airlines',
+    'US' : 'US Airways',
+    'WN' : 'Southwest Airlines',
+    'EV' : 'Atlantic Southeast Airlines',
+    'F9' : 'Frontier Airlines',
+    'FL' : 'AirTran Airways',
+    'HA' : 'Hawaiian Airlines',
+    'MQ' : 'Envoy Air',
+    '9E' : 'Endeavor Air',
+    'AA' : 'American Airlines',
+    'AS' : 'Alaska Airlines',
+    'B6' : 'JetBlue Airways',
+    'CO' : 'Continental Airlines',
+    'DL' : 'Delta Air Lines',
+    'VX' : 'Virgin America',
+    'NK' : 'Spirit Airlines',
+    'G4' : 'Allegiant Air',
+    'YX' : 'Republic Airways'
+}, inplace=True)
 
 #%%
 
@@ -210,23 +218,76 @@ for carrier in flights_to_remove:
     indexNames = df[df['CARRIER_NAME'] == carrier].index
     df.drop(indexNames, inplace=True)
 
+# show counts per airline
+airline_counts = df.OP_CARRIER.value_counts()
+
+#%%    
+# NEW SECTION!
+# making new columns with classifiers for the flight status
+# two different classifiers below, two new columns
+
+# Binary classification
+# 0 - on time
+# 1 - delayed
+status1 = []
+for value in df['ARR_DELAY']:
+    if value < 15: # anything more than 15 minutes is a delay (DoT standard)
+        status1.append(0) # on time
+    else:
+        status1.append(1) # delay
+df['FLIGHT_STATUS1'] = status1  
+
+# Five-part classifier
+# 0 - less than 15 minutes
+# 1 - 15-30 minutes
+# 2 - 30-60 minutes
+# 3 - 60-90 minutes
+# 4 - 90+ minutes
+status2 = []
+for value in df['ARR_DELAY']:
+    if value < 15: # anything more than 15 minutes is a delay (DoT standard)
+        status2.append(0) # on time
+    elif 15 <= value < 30:
+        status2.append(1) # minor delay
+    elif 30 <= value < 60:
+        status2.append(2) # medium delay
+    elif 60 <= value < 90:
+        status2.append(3) # large delay
+    else:
+        status2.append(4) # too delayed
+df['FLIGHT_STATUS2'] = status2
+
 #%%
-variables_to_remove = ['TAXI_OUT', 'TAXI_IN', 'WHEELS_ON', 'WHEELS_OFF', 'NAS_DELAY',
-                       'SECURITY_DELAY', 'WEATHER_DELAY', 'DIVERTED', 'CANCELLED',
-                       'CANCELLATION_CODE', 'OP_CARRIER_FL_NUM', 'DISTANCE']
+variables_to_remove = ['TAXI_OUT', 'TAXI_IN', 'WHEELS_ON', 'WHEELS_OFF',
+                       'DIVERTED', 'CANCELLED', 'CANCELLATION_CODE',
+                       'OP_CARRIER_FL_NUM', 'DISTANCE',
+                       'NAS_DELAY','SECURITY_DELAY']
 
 df.drop(variables_to_remove, axis = 1, inplace = True)
 
-df.rename(columns={"FL_DATE" : "DATE",
-                   "OP_CARRIER": "IATA_CODE",
-                   "CRS_DEP_TIME" : "SCHEDULED_DEP",
-                   "CRS_ARR_TIME" : "SCHEDULED_ARR",
-                   "CRS_ELAPSED_TIME" : "SCHEDULED_ELAPSED_TIME"},
+df = df.rename(columns={"OP_CARRIER": "CARRIER",
+                        "FL_DATE" : "DATE",
+                        "CRS_DEP_TIME" : "SCHEDULED_DEP",
+                        "CRS_ARR_TIME" : "SCHEDULED_ARR",
+                        "CRS_ELAPSED_TIME" : "SCHEDULED_ELAPSED_TIME"},
           errors="raise")
 
 #%%
 # split date (currently in YYYY-MM-DD format) into separate Year, Month, and Day columns
 df[['Year','Month','Day']] = df.FL_DATE.str.split("-",expand=True,)
+
+# find weekday of each flight
+df['DATE'] = pd.to_datetime(df['DATE'])
+df['WEEKDAY'] = df['DATE'].dt.dayofweek
+
+# WEEKDAY GLOSSARY:
+# 0 = Monday
+# 1 = Tuesday
+# 2 = Wednesday
+# 3 = Thursday
+#  4 = Friday
+# 5 = Saturday
+# 6 = Sunday
 
 #%%
 
@@ -282,6 +343,21 @@ global_stats
 Visualizations
 """
 
+#%%
+
+# Horizonal Bar Chart - counts of flights per airline
+
+plt.figure(figsize=(20, 10))
+sns.set(font_scale=1.6)
+axis = sns.countplot(y=df['CARRIER'], order=df['CARRIER'].value_counts().iloc[0:18].index, data=df, orient="h", palette = "bright")
+axis.set_xticklabels(axis.get_xticklabels(), rotation=45, ha='right')
+plt.title('Number of Flights by Airline', fontsize=24)
+plt.xlabel('Airline', fontsize=18)
+plt.ylabel('Number of Flights', fontsize=18)
+plt.tight_layout()
+plt.show()
+
+#%%
 ##### DEPARTURE DELAYS VS. ARRIVAL DELAYS (BAR CHART)
 
 mpl.rcParams.update(mpl.rcParamsDefault)
