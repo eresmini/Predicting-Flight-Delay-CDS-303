@@ -40,26 +40,35 @@ missing_df1.sort_values('filling factor (%)').reset_index(drop = True)
 
 #%%
 
-abbr_companies = {'XE' : 'ExpressJet Airlines',
+#### AIRLINES TO REMOVE:
+# Atlantic Southeast Airlines - Merged into ExpressJet in 2011
+# Airtran Airways - merged into Southwest in 2014
+# Continental Airlines - merged into United Airlines in 2012
+# ExpressJet - currently defunct (trying to come back)
+# Northwest Airlines - acquired by Delta in 2008(?)
+# US Airways - merged with American Airlines in 2013
+# Virgin America - acquired by Alaska Airlines in 2018
+
+abbr_companies = {# 'XE' : 'ExpressJet Airlines', --
                   'YV' : 'Mesa Airlines',
-                  'NW' : 'Northwest Airlines',
+                  # 'NW' : 'Northwest Airlines',  --
                   'OH' : 'PSA Airlines',
                   'OO' : 'SkyWest Airlines',
                   'UA' : 'United Airlines',
-                  'US' : 'US Airways',
+                  'US' : 'US Airways', # -- not working data cleaning
                   'WN' : 'Southwest Airlines',
-                  'EV' : 'Atlantic Southeast Airlines',
+                  # 'EV' : 'Atlantic Southeast Airlines', --
                   'F9' : 'Frontier Airlines',
-                  'FL' : 'AirTran Airways',
+                  'FL' : 'AirTran Airways', # -- not working data cleaning
                   'HA' : 'Hawaiian Airlines',
                   'MQ' : 'Envoy Air',
                   '9E' : 'Endeavor Air',
                   'AA' : 'American Airlines',
                   'AS' : 'Alaska Airlines',
                   'B6' : 'JetBlue Airways',
-                  'CO' : 'Continental Airlines',
+                  # 'CO' : 'Continental Airlines', --
                   'DL' : 'Delta Air Lines',
-                  'VX' : 'Virgin America',
+                  # 'VX' : 'Virgin America', --
                   'NK' : 'Spirit Airlines',
                   'G4' : 'Allegiant Air',
                   'YX' : 'Republic Airways'}
@@ -160,11 +169,37 @@ ax.set_yticklabels(labels)
 plt.setp(ax.get_xticklabels(), fontsize=12, weight = 'normal', rotation = 0);
 plt.setp(ax.get_yticklabels(), fontsize=12, weight = 'bold', rotation = 0);
 ax.yaxis.label.set_visible(False)
-plt.xlabel('Flight count', fontsize=16, weight = 'bold', labelpad=10)
+plt.xlabel("flight count", fontsize=16, weight = 'bold', labelpad=10)
 
 # Set the legend
 L = plt.legend()
 L.get_texts()[0].set_text('on time (t < 15 min)')
 L.get_texts()[1].set_text('small delay (15 < t < 45 min)')
 L.get_texts()[2].set_text('large delay (t > 45 min)')
+plt.show()
+
+#%%
+##### LENGTH OF DELAY FLIGHTS
+
+dfb = dfa.copy()
+indexNames2 = dfb[dfb['FLIGHT_STATUS1'] == 0].index
+dfb.drop(indexNames2, inplace=True)
+
+#%%
+### lenght of delay stats
+
+global_stats2 = dfb['DEP_DELAY'].groupby(dfb['CARRIER']).apply(get_stats).unstack()
+global_stats2 = global_stats2.sort_values('count')
+global_stats2
+
+#%%
+
+# Horizonal Bar Chart - average length of delay flights in minutes per airline (or do sum?)
+plt.figure(figsize=(20, 10))
+dfb.groupby('CARRIER').ARR_DELAY.mean().sort_values(ascending=True).plot.barh()
+plt.title('Average lenght of delay flights (in minutes) By Airline', fontsize=18)
+plt.xlabel('Average lenght of delay (minutes)', fontsize=14)
+plt.ylabel('Airline', fontsize=14)
+plt.rc('xtick',labelsize=10)
+plt.rc('ytick',labelsize=10)
 plt.show()
