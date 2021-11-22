@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 #%%
 
-dfa = pd.read_csv('cleaned_dataframe.csv')
+dfa = pd.read_csv('cleaned_dataframe.csv', index_col=0)
 
 # converting most int64 types back to int32 (they revert when reading in the csv)
 dfa = dfa.astype({
