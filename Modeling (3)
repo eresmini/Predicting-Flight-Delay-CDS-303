@@ -56,43 +56,6 @@ missing_df1.sort_values('filling factor (%)').reset_index(drop = True)
 delays1 = df3.FLIGHT_STATUS1.value_counts(normalize=True)
 delays2 = df3.FLIGHT_STATUS2.value_counts(normalize=True)
 
-#%%
-
-# gonna take away some of the least frequent-appearing airports
-a_freq = df3['ORIGIN'].value_counts() # shows the count of occurances of each origin airport
-a_freq_list = a_freq.values.tolist()
-
-airport = []
-# for i in a_freq:
-#     if i <= 50000:
-#         airport.append(1)
-
-for index, value in a_freq.items():
-    if value <= 40000:
-        airport.append(index)
-
-df3 = df3[df3.ORIGIN.isin(airport) == False]
-
-
-#%%
-
-# Horizonal Bar Chart - counts of flights per airline
-
-plt.figure(figsize=(20, 10))
-sns.set(font_scale=1.6)
-axis = sns.countplot(y=df3['ORIGIN'], order=df3['ORIGIN'].value_counts().iloc[0:49].index, data=df3, color='lightsteelblue')
-plt.axvline(100000, color='r')
-plt.axvline(200000, color='r')
-plt.axvline(300000, color='r')
-plt.axvline(400000, color='r')
-plt.axvline(500000, color='r')
-axis.set_yticklabels(axis.get_yticklabels(), fontsize = 10)
-plt.title('Airport Frequency', fontsize=24)
-plt.xlabel('Frequency', fontsize=18)
-plt.ylabel('Airport', fontsize=18)
-plt.tight_layout()
-plt.show()
-
 
 #%%
 
