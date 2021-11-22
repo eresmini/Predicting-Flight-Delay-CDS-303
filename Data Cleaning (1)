@@ -200,9 +200,26 @@ flights_to_remove = ['Atlantic Southeast Airlines',
 
 for carrier in flights_to_remove:
     indexNames = df[df['OP_CARRIER'] == carrier].index
-    df.drop(indexNames, inplace=True)
+    df = df.drop(indexNames, inplace=True)
 
 airline_counts = df.OP_CARRIER.value_counts()
+
+#%%
+
+# gonna take away some of the least frequent-appearing airports
+a_freq = df['ORIGIN'].value_counts() # shows the count of occurances of each origin airport
+a_freq_list = a_freq.values.tolist()
+
+airport = []
+# for i in a_freq:
+#     if i <= 50000:
+#         airport.append(1)
+
+for index, value in a_freq.items():
+    if value <= 40000:
+        airport.append(index)
+
+df = df[df.ORIGIN.isin(airport) == False]
 
 #%%
 # split date (currently in YYYY-MM-DD format) into separate Year, Month, and Day columns
