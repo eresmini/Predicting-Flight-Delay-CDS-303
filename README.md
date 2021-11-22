@@ -19,6 +19,12 @@ projects on flight delay prediction:
 https://github.com/JaHerbas/Predicting_Flight_Delays  
 https://www.kaggle.com/fabiendaniel/predicting-flight-delays-tutorial  
   
+Pandas dataframe:  
+https://pandas.pydata.org/docs/reference/frame.html  
+  
+Numpy:  
+https://numpy.org/doc/stable/user/quickstart.html  
+    
 logistic regression tutorials (using scikit learn):  
 https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html?highlight=logistic%20regression#sklearn.linear_model.LogisticRegression  
 https://www.datacamp.com/community/tutorials/understanding-logistic-regression-python  
