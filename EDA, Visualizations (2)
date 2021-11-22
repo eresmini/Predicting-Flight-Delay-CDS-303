@@ -109,6 +109,26 @@ plt.ylabel('Number of Flights', fontsize=18)
 plt.tight_layout()
 plt.show()
 
+
+#%%
+
+# Horizonal Bar Chart - Frequency of airport
+
+plt.figure(figsize=(20, 10))
+sns.set(font_scale=1.6)
+axis = sns.countplot(y=dfa['ORIGIN'], order=dfa['ORIGIN'].value_counts().iloc[0:49].index, data=dfa, color='lightsteelblue')
+plt.axvline(100000, color='r')
+plt.axvline(200000, color='r')
+plt.axvline(300000, color='r')
+plt.axvline(400000, color='r')
+plt.axvline(500000, color='r')
+axis.set_yticklabels(axis.get_yticklabels(), fontsize = 10)
+plt.title('Airport Frequency', fontsize=24)
+plt.xlabel('Frequency', fontsize=18)
+plt.ylabel('Airport', fontsize=18)
+plt.tight_layout()
+plt.show()
+
 #%%
 
 # Horizonal Bar Chart - counts of delayed flights per airline
@@ -121,6 +141,18 @@ plt.ylabel('Airline', fontsize=16)
 plt.rc('xtick',labelsize=10)
 plt.rc('ytick',labelsize=10)
 plt.show()
+
+#%%
+
+## Grouped barchart comparing on-time and delayed flights
+
+plt.figure(figsize=(20, 10))
+g = sns.countplot(x=dfa['CARRIER'], order=dfa['CARRIER'].value_counts().iloc[0:18].index, data=dfa, hue=dfa['FLIGHT_STATUS1'])
+g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
+plt.yscale('log')
+plt.title('On-Time and Delayed Flights by Airline', fontsize=24)
+plt.xlabel('Airline', fontsize=18)
+plt.ylabel('Count of Flights', fontsize=18)
 
 #%%
 
