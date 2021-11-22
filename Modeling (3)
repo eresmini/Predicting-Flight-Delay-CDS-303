@@ -36,6 +36,12 @@ df3 = dfa.astype({
     'DISTANCE' : int
             })
 
+
+#%%
+
+# info on the dataframe - data type, memory storage, etc.
+info = df3.info()
+
 #%%
 
 # make sure we still have no missing values
@@ -49,6 +55,44 @@ missing_df1.sort_values('filling factor (%)').reset_index(drop = True)
 
 delays1 = df3.FLIGHT_STATUS1.value_counts(normalize=True)
 delays2 = df3.FLIGHT_STATUS2.value_counts(normalize=True)
+
+#%%
+
+# gonna take away some of the least frequent-appearing airports
+a_freq = df3['ORIGIN'].value_counts() # shows the count of occurances of each origin airport
+a_freq_list = a_freq.values.tolist()
+
+airport = []
+# for i in a_freq:
+#     if i <= 50000:
+#         airport.append(1)
+
+for index, value in a_freq.items():
+    if value <= 40000:
+        airport.append(index)
+
+df3 = df3[df3.ORIGIN.isin(airport) == False]
+
+
+#%%
+
+# Horizonal Bar Chart - counts of flights per airline
+
+plt.figure(figsize=(20, 10))
+sns.set(font_scale=1.6)
+axis = sns.countplot(y=df3['ORIGIN'], order=df3['ORIGIN'].value_counts().iloc[0:49].index, data=df3, color='lightsteelblue')
+plt.axvline(100000, color='r')
+plt.axvline(200000, color='r')
+plt.axvline(300000, color='r')
+plt.axvline(400000, color='r')
+plt.axvline(500000, color='r')
+axis.set_yticklabels(axis.get_yticklabels(), fontsize = 10)
+plt.title('Airport Frequency', fontsize=24)
+plt.xlabel('Frequency', fontsize=18)
+plt.ylabel('Airport', fontsize=18)
+plt.tight_layout()
+plt.show()
+
 
 #%%
 
@@ -235,28 +279,18 @@ print('Weight for class 1: {:.2f}'.format(weight_for_1))
 #%%
 
 dfm = df3
-OP_CARRIER_dummies = pd.get_dummies(dfm['CARRIER'], prefix='CARRIER', drop_first=True)
+
+CARRIER_dummies = pd.get_dummies(dfm['CARRIER'], prefix='CARRIER', drop_first=True)
 ORIGIN_dummies = pd.get_dummies(dfm['ORIGIN'], prefix='ORIGIN', drop_first=True)
 DEST_dummies = pd.get_dummies(dfm['DEST'], prefix='DEST', drop_first=True)
+IATA_dummies = pd.get_dummies(dfm['IATA'], prefix='IATA', drop_first=True)
 YEAR_dummies = pd.get_dummies(dfm['Year'], prefix='Year', drop_first=True)
 MONTH_dummies = pd.get_dummies(dfm['Month'], prefix='Month', drop_first=True)
 DAY_dummies = pd.get_dummies(dfm['Day'], prefix='Day', drop_first=True)
 WEEKDAY_dummies = pd.get_dummies(dfm['WEEKDAY'], prefix='WEEKDAY', drop_first=True)
 
-dfm = dfm.drop(['CARRIER', 'ORIGIN', 'DEST', 'Month', 'WEEKDAY', 'Year','Day'], axis=1)
-dfm = pd.concat([dfm, OP_CARRIER_dummies, ORIGIN_dummies, DEST_dummies, YEAR_dummies, MONTH_dummies, DAY_dummies, WEEKDAY_dummies], axis=1)
-
-
-#%%
-
-dfm = df3
-
-# Get one hot encoding of categorical columns
-one_hot = pd.get_dummies(dfm[['CARRIER','ORIGIN','DEST','WEEKDAY']])
-# Drop column that are now encoded
-dfm = dfm.drop(['CARRIER','ORIGIN','DEST','WEEKDAY'],axis = 1)
-# Join the encoded df
-dfm = dfm.join(one_hot)
+dfm = dfm.drop(['CARRIER', 'ORIGIN', 'DEST', 'IATA', 'Year', 'Month', 'Day', 'WEEKDAY'], axis=1)
+dfm = pd.concat([dfm, CARRIER_dummies, ORIGIN_dummies, DEST_dummies, IATA_dummies, YEAR_dummies, MONTH_dummies, DAY_dummies, WEEKDAY_dummies], axis=1)
 
 #%%
 
@@ -270,3 +304,16 @@ forest.fit(X_train, y_train)
 
 forest.score(X_train, y_train)
 forest.score(X_test, y_test)
+
+#%%
+
+pred_rf = forest.predict(X_test)
+
+#%%
+
+plot_confusion_matrix(forest, X, y, values_format='.3g')
+plt.show()
+
+print("Testing Accuracy for RandomForest Classifier: {:.4}%".format(accuracy_score(y_test, pred_rf) * 100))
+
+# Random Forest algorithm had 98% accuracy YAYAYAY
