@@ -12,3 +12,21 @@ PLEASE TRY TO FOLLOW THESE GUIDELINES!
 - when you make a change, please consider shooting a message on Discord (under the 'project' channel) so everyone can work with the most updated version of the project
 
 Happy coding :)
+
+RESOURCES:
+
+projects on flight delay prediction:
+https://github.com/JaHerbas/Predicting_Flight_Delays
+https://www.kaggle.com/fabiendaniel/predicting-flight-delays-tutorial
+
+logistic regression tutorials (using scikit learn):
+https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html?highlight=logistic%20regression#sklearn.linear_model.LogisticRegression
+https://www.datacamp.com/community/tutorials/understanding-logistic-regression-python
+
+categorical coding:
+https://towardsdatascience.com/categorical-encoding-using-label-encoding-and-one-hot-encoder-911ef77fb5bd may hit the paywall
+https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html
+
+visualizations:
+https://www.python-graph-gallery.com/
+https://www.r-graph-gallery.com/about.html R language but may have some good ideas
