@@ -1,0 +1,170 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Nov 21 20:30:54 2021
+
+@author: rresm
+"""
+#%%
+
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+#%%
+
+dfa = pd.read_csv('cleaned_dataframe.csv')
+
+# converting most int64 types back to int32 (they revert when reading in the csv)
+dfa = dfa.astype({
+    'DEP_DELAY': int,
+    'TAXI_OUT' : int,
+    'WHEELS_OFF' : int,
+    'WHEELS_ON' : int,
+    'TAXI_IN' : int,
+    'ARR_DELAY' : int,
+    'SCHEDULED_ELAPSED_TIME' : int,
+    'ACTUAL_ELAPSED_TIME' : int,
+    'AIR_TIME' : int,
+    'DISTANCE' : int
+            })
+
+#%%
+
+# make sure we still have no missing values
+missing_df1 = dfa.isnull().sum(axis=0).reset_index()
+missing_df1.columns = ['variable', 'missing values']
+missing_df1['filling factor (%)']=(dfa.shape[0]-missing_df1['missing values'])/dfa.shape[0]*100
+missing_df1.sort_values('filling factor (%)').reset_index(drop = True)
+
+#%%
+
+abbr_companies = {'XE' : 'ExpressJet Airlines',
+                  'YV' : 'Mesa Airlines',
+                  'NW' : 'Northwest Airlines',
+                  'OH' : 'PSA Airlines',
+                  'OO' : 'SkyWest Airlines',
+                  'UA' : 'United Airlines',
+                  'US' : 'US Airways',
+                  'WN' : 'Southwest Airlines',
+                  'EV' : 'Atlantic Southeast Airlines',
+                  'F9' : 'Frontier Airlines',
+                  'FL' : 'AirTran Airways',
+                  'HA' : 'Hawaiian Airlines',
+                  'MQ' : 'Envoy Air',
+                  '9E' : 'Endeavor Air',
+                  'AA' : 'American Airlines',
+                  'AS' : 'Alaska Airlines',
+                  'B6' : 'JetBlue Airways',
+                  'CO' : 'Continental Airlines',
+                  'DL' : 'Delta Air Lines',
+                  'VX' : 'Virgin America',
+                  'NK' : 'Spirit Airlines',
+                  'G4' : 'Allegiant Air',
+                  'YX' : 'Republic Airways'}
+
+#%%
+"""
+Summary Statistics
+"""
+def get_stats(group):
+    return {'min': group.min(), 'max': group.max(),
+            'count': group.count(), 'mean': group.mean()}
+
+## DELAY STATS
+global_stats = dfa['DEP_DELAY'].groupby(dfa['CARRIER']).apply(get_stats).unstack()
+global_stats = global_stats.sort_values('count')
+global_stats
+
+#%%
+
+delays1 = dfa.FLIGHT_STATUS1.value_counts(normalize=True)
+delays2 = dfa.FLIGHT_STATUS2.value_counts(normalize=True)
+
+
+#%%
+"""
+Visualizations
+"""
+
+# Horizonal Bar Chart - counts of flights per airline
+
+plt.figure(figsize=(20, 10))
+sns.set(font_scale=1.6)
+axis = sns.countplot(y=dfa['CARRIER'], order=dfa['CARRIER'].value_counts().iloc[0:18].index, data=dfa, orient="h", palette = 'bright')
+axis.set_xticklabels(axis.get_xticklabels(), rotation=45, ha='right')
+plt.title('Number of Flights by Airline', fontsize=24)
+plt.xlabel('Airline', fontsize=18)
+plt.ylabel('Number of Flights', fontsize=18)
+plt.tight_layout()
+plt.show()
+
+#%%
+
+# Horizonal Bar Chart - counts of delayed flights per airline
+
+plt.figure(figsize=(20, 10))
+dfa.groupby('CARRIER').FLIGHT_STATUS1.sum().sort_values(ascending=True).plot.barh()
+plt.title('Delayed Flights by Airline', fontsize=20)
+plt.xlabel('Number of Flights', fontsize=16)
+plt.ylabel('Airline', fontsize=16)
+plt.rc('xtick',labelsize=10)
+plt.rc('ytick',labelsize=10)
+plt.show()
+
+#%%
+
+# Horizonal Bar Chart - average delayed minutes per airline (or do sum?)
+
+plt.figure(figsize=(20, 10))
+dfa.groupby('CARRIER').ARR_DELAY.mean().sort_values(ascending=True).plot.barh()
+plt.title('Average Delay (in minutes) By Airline', fontsize=18)
+plt.xlabel('Average Delay (minutes)', fontsize=14)
+plt.ylabel('Airline', fontsize=14)
+plt.rc('xtick',labelsize=10)
+plt.rc('ytick',labelsize=10)
+plt.show()
+
+
+#%%
+
+##### DEPARTURE DELAYS VS. ARRIVAL DELAYS (BAR CHART)
+
+mpl.rcParams.update(mpl.rcParamsDefault)
+mpl.rcParams['hatch.linewidth'] = 2.0  
+
+fig = plt.figure(1, figsize=(11,6))
+ax = sns.barplot(x="DEP_DELAY", y="CARRIER", data=dfa, color="lightskyblue", ci=None)
+ax = sns.barplot(x="ARR_DELAY", y="CARRIER", data=dfa, color="r", hatch = '///',
+                 alpha = 0.0, ci=None)
+labels = list(abbr_companies.values())
+ax.set_yticklabels(labels)
+ax.yaxis.label.set_visible(False)
+plt.xlabel('Mean delay [min] (@departure: blue, @arrival: hatch lines)',
+           fontsize=14, weight = 'bold', labelpad=10);
+plt.show()
+
+#%%
+##### DELAYS BAR CHART
+
+# Function that define how delays are grouped
+delay_type = lambda x:((0,1)[x > 15],2)[x > 45]
+dfa['DELAY_LEVEL'] = dfa['DEP_DELAY'].apply(delay_type)
+
+
+fig = plt.figure(1, figsize=(10,7))
+ax = sns.countplot(y="CARRIER", hue='DELAY_LEVEL', data=dfa)
+
+ax.set_yticklabels(labels)
+plt.setp(ax.get_xticklabels(), fontsize=12, weight = 'normal', rotation = 0);
+plt.setp(ax.get_yticklabels(), fontsize=12, weight = 'bold', rotation = 0);
+ax.yaxis.label.set_visible(False)
+plt.xlabel('Flight count', fontsize=16, weight = 'bold', labelpad=10)
+
+# Set the legend
+L = plt.legend()
+L.get_texts()[0].set_text('on time (t < 15 min)')
+L.get_texts()[1].set_text('small delay (15 < t < 45 min)')
+L.get_texts()[2].set_text('large delay (t > 45 min)')
+plt.show()
