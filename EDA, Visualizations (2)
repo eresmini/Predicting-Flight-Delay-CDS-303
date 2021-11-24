@@ -88,6 +88,13 @@ global_stats
 
 #%%
 
+## DELAY STATS
+global_stats2 = dfa['ARR_DELAY'].groupby(dfa['CARRIER']).apply(get_stats).unstack()
+global_stats2 = global_stats2.sort_values('count')
+global_stats2
+
+#%%
+
 delays1 = dfa.FLIGHT_STATUS1.value_counts(normalize=True)
 delays2 = dfa.FLIGHT_STATUS2.value_counts(normalize=True)
 
@@ -109,6 +116,46 @@ plt.ylabel('Number of Flights', fontsize=18)
 plt.tight_layout()
 plt.show()
 
+#%%
+
+# Horizonal Bar Chart - counts of delayed flights per airline
+
+plt.figure(figsize=(20, 10))
+dfa.groupby('CARRIER').FLIGHT_STATUS1.sum().sort_values(ascending=True).plot.barh()
+plt.title('Delayed Flights by Airline', fontsize=20)
+plt.xlabel('Number of Flights', fontsize=16)
+plt.ylabel('Airline', fontsize=16)
+plt.rc('xtick',labelsize=10)
+plt.rc('ytick',labelsize=10)
+plt.show()
+
+#%%
+
+## Grouped barchart comparing on-time and delayed flights
+
+plt.figure(figsize=(20, 10))
+g = sns.countplot(y=dfa['CARRIER'], order=dfa['CARRIER'].value_counts().iloc[0:18].index, data=dfa, orient="h", hue=dfa['FLIGHT_STATUS1'])
+plt.title('On-Time and Delayed Flights by Airline', fontsize=24)
+plt.xlabel('Airline', fontsize=18)
+plt.ylabel('Count of Flights', fontsize=18)
+
+#%%
+
+## Percentages of carrier depending on flight status 1
+
+dfb = dfa.groupby('CARRIER')['FLIGHT_STATUS1'].value_counts(normalize=True)
+dfb = dfb.mul(100)
+dfb = dfb.rename('percent').reset_index()
+
+
+#%%
+## Grouped barchart comparing on-time and delayed in percetanges
+
+plt.figure(figsize=(20, 10))
+g = sns.catplot(x='percent', y='CARRIER', kind='bar', data=dfb, hue='FLIGHT_STATUS1')
+plt.title('Percentage On-Time and Delayed Flights by Airline', fontsize=20)
+plt.xlabel('Airline', fontsize=18)
+plt.ylabel('Percentage', fontsize=18)
 
 #%%
 
@@ -129,34 +176,10 @@ plt.ylabel('Airport', fontsize=18)
 plt.tight_layout()
 plt.show()
 
-#%%
-
-# Horizonal Bar Chart - counts of delayed flights per airline
-
-plt.figure(figsize=(20, 10))
-dfa.groupby('CARRIER').FLIGHT_STATUS1.sum().sort_values(ascending=True).plot.barh()
-plt.title('Delayed Flights by Airline', fontsize=20)
-plt.xlabel('Number of Flights', fontsize=16)
-plt.ylabel('Airline', fontsize=16)
-plt.rc('xtick',labelsize=10)
-plt.rc('ytick',labelsize=10)
-plt.show()
 
 #%%
 
-## Grouped barchart comparing on-time and delayed flights
-
-plt.figure(figsize=(20, 10))
-g = sns.countplot(x=dfa['CARRIER'], order=dfa['CARRIER'].value_counts().iloc[0:18].index, data=dfa, hue=dfa['FLIGHT_STATUS1'])
-g.set_xticklabels(g.get_xticklabels(), rotation=45, ha='right')
-plt.yscale('log')
-plt.title('On-Time and Delayed Flights by Airline', fontsize=24)
-plt.xlabel('Airline', fontsize=18)
-plt.ylabel('Count of Flights', fontsize=18)
-
-#%%
-
-# Horizonal Bar Chart - average delayed minutes per airline (or do sum?)
+# Horizonal Bar Chart - average delayed minutes per airline
 
 plt.figure(figsize=(20, 10))
 dfa.groupby('CARRIER').ARR_DELAY.mean().sort_values(ascending=True).plot.barh()
@@ -187,7 +210,7 @@ plt.xlabel('Mean delay [min] (@departure: blue, @arrival: hatch lines)',
 plt.show()
 
 #%%
-##### DELAYS BAR CHART
+##### Grouped barchart comparing on-time and delayed flight status 2
 
 # Function that define how delays are grouped
 delay_type = lambda x:((0,1)[x > 15],2)[x > 45]
@@ -211,24 +234,42 @@ L.get_texts()[2].set_text('large delay (t > 45 min)')
 plt.show()
 
 #%%
+
+## Percentages of carrier depending on flight status 2
+
+dfc = dfa.groupby('CARRIER')['FLIGHT_STATUS2'].value_counts(normalize=True)
+dfc = dfc.mul(100)
+dfc = dfc.rename('percent').reset_index()
+
+
+#%%
+## Grouped barchart comparing on-time and delayed in percetanges flight status 2
+
+plt.figure(figsize=(20, 10))
+g = sns.catplot(x='percent', y='CARRIER', kind='bar', data=dfc, hue='FLIGHT_STATUS2')
+plt.title('Percentage On-Time and Delayed Flights by Airline', fontsize=20)
+plt.xlabel('Airline', fontsize=18)
+plt.ylabel('Percentage', fontsize=18)
+
+#%%
 ##### LENGTH OF DELAY FLIGHTS
 
-dfb = dfa.copy()
-indexNames2 = dfb[dfb['FLIGHT_STATUS1'] == 0].index
-dfb.drop(indexNames2, inplace=True)
+dfd = dfa.copy()
+indexNames2 = dfd[dfd['FLIGHT_STATUS1'] == 0].index
+dfd.drop(indexNames2, inplace=True)
 
 #%%
 ### lenght of delay stats
 
-global_stats2 = dfb['DEP_DELAY'].groupby(dfb['CARRIER']).apply(get_stats).unstack()
-global_stats2 = global_stats2.sort_values('count')
-global_stats2
+global_stats3 = dfd['ARR_DELAY'].groupby(dfd['CARRIER']).apply(get_stats).unstack()
+global_stats3 = global_stats3.sort_values('count')
+global_stats3
 
 #%%
 
-# Horizonal Bar Chart - average length of delay flights in minutes per airline (or do sum?)
+# Horizonal Bar Chart - average length of delay flights in minutes per airline 
 plt.figure(figsize=(20, 10))
-dfb.groupby('CARRIER').ARR_DELAY.mean().sort_values(ascending=True).plot.barh()
+dfd.groupby('CARRIER').ARR_DELAY.mean().sort_values(ascending=True).plot.barh()
 plt.title('Average lenght of delay flights (in minutes) By Airline', fontsize=18)
 plt.xlabel('Average lenght of delay (minutes)', fontsize=14)
 plt.ylabel('Airline', fontsize=14)
