@@ -25,6 +25,11 @@ https://pandas.pydata.org/docs/reference/frame.html
 Numpy:  
 https://numpy.org/doc/stable/user/quickstart.html  
     
+random forest classifier tutorials:  
+https://www.datacamp.com/community/tutorials/random-forests-classifier-python  
+http://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html  
+https://www.geeksforgeeks.org/random-forest-classifier-using-scikit-learn/  
+   
 logistic regression tutorials (using scikit learn):  
 https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html?highlight=logistic%20regression#sklearn.linear_model.LogisticRegression  
 https://www.datacamp.com/community/tutorials/understanding-logistic-regression-python  
