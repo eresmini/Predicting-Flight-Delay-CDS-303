@@ -132,7 +132,7 @@ scaling_check2(df3)
 #%%
 
 # Binary classification model
-# analyzes one airport at a time
+# analyzes one airport
 # will ask for user input: "Choose a carrier"
 
 def RandomForest1(df):
@@ -182,7 +182,7 @@ RandomForest1(df3)
 #%%
 
 # multiclassification model
-# analyzes one airport at a time
+# analyzes one airport
 # will ask for user input: "Choose a carrier"
 
 def RandomForest2(df):
