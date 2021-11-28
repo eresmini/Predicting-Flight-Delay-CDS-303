@@ -131,7 +131,11 @@ scaling_check2(df3)
 
 #%%
 
-def FlightPrediction(df):
+# Binary classification
+# analyzes one airport
+# will ask for user input: "Choose a carrier"
+
+def LogisticRegression1(df):
     
     global dfm
     dfm = df
@@ -209,4 +213,68 @@ def FlightPrediction(df):
     plt.legend(loc=4)
     plt.show()    
 
-FlightPrediction(df3)
+LogisticRegression1(df3)
+
+#%%
+
+# 5-Part Classifier
+# analyzes one airport
+# will ask for user input: "Choose a carrier"
+
+def LogisticRegression2(df):
+    
+    global dfm
+    dfm = df
+    
+    # User input: Choose an airline
+    carrier = input('Choose a carrier: ')
+    dfm = dfm[dfm['CARRIER'] == carrier]
+    if dfm.empty:
+        print('No flights match your criteria.')
+        return None
+    
+    # Create dummy variables
+    CARRIER_dummies = pd.get_dummies(dfm['CARRIER'], prefix='CARRIER', drop_first=True)
+    ORIGIN_dummies = pd.get_dummies(dfm['ORIGIN'], prefix='ORIGIN', drop_first=True)
+    DEST_dummies = pd.get_dummies(dfm['DEST'], prefix='DEST', drop_first=True)
+    IATA_dummies = pd.get_dummies(dfm['IATA'], prefix='IATA', drop_first=True)
+    YEAR_dummies = pd.get_dummies(dfm['Year'], prefix='Year', drop_first=True)
+    MONTH_dummies = pd.get_dummies(dfm['Month'], prefix='Month', drop_first=True)
+    DAY_dummies = pd.get_dummies(dfm['Day'], prefix='Day', drop_first=True)
+    WEEKDAY_dummies = pd.get_dummies(dfm['WEEKDAY'], prefix='WEEKDAY', drop_first=True)
+
+    # replace necessary columns in dataframe with dummy variables
+    dfm = dfm.drop(['CARRIER', 'ORIGIN', 'DEST', 'IATA', 'Year', 'Month', 'Day', 'WEEKDAY'], axis=1)
+    dfm = pd.concat([dfm, CARRIER_dummies, ORIGIN_dummies, DEST_dummies,
+                     IATA_dummies, YEAR_dummies, MONTH_dummies, DAY_dummies,
+                     WEEKDAY_dummies], axis=1)
+
+    # Create features (X) and labels (y)
+    y = dfm['FLIGHT_STATUS2']
+    X = dfm.drop(['FLIGHT_STATUS1', 'FLIGHT_STATUS2', 'DEP_DELAY', 'ARR_DELAY'], axis=1)
+    
+    # split into testing and training data
+    X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
+    
+    # instantiate the model
+    logreg = LogisticRegression(max_iter=2000, class_weight='balanced', 
+                                multi_class='multinomial',n_jobs=-1)
+    
+    # fit the model with data
+    fit = logreg.fit(X_train,y_train)
+
+    #
+    y_pred=fit.predict(X_test)
+
+
+    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+
+    print(cnf_matrix)
+    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+    print("Precision:",metrics.precision_score(y_test, y_pred, average='weighted'))
+    print("Recall:",metrics.recall_score(y_test, y_pred, average='weighted')) 
+    
+    plot_confusion_matrix(fit, X, y, values_format='.3g')
+    plt.show()
+
+LogisticRegression2(df3)
