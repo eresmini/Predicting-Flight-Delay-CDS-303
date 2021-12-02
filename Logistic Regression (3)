@@ -60,26 +60,6 @@ delays2 = df3.FLIGHT_STATUS2.value_counts(normalize=True)
 
 #%%
 
-# numerical attributes
-df3.hist(figsize = [15, 15],bins=9) 
-plt.show()
-
-#%%
-
-#categorical attributes
-
-categoricals = ['CARRIER','ORIGIN','DEST',
-                'Year','Month','WEEKDAY']
-
-fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16,14), sharey=True)
-for col, ax in zip(categoricals, axes.flatten()):
-    (df3.groupby(col).sum()['FLIGHT_STATUS1'].sort_values().plot.bar(ax=ax))
-    ax.set_title(col)
-fig.tight_layout()
-
-
-#%%
-
 # checking for multicollinearity ( heat map )
 X = df3.drop(['FLIGHT_STATUS1', 'FLIGHT_STATUS2', 'DEP_DELAY', 'ARR_DELAY'], axis=1)
 plt.figure(figsize=(26,18))
