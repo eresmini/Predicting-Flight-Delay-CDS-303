@@ -7,10 +7,11 @@ Created on Sun Nov 21 20:30:54 2021
 #%%
 
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import plotly.express as px
+from plotly.offline import plot
 
 #%%
 
@@ -40,35 +41,19 @@ missing_df1.sort_values('filling factor (%)').reset_index(drop = True)
 
 #%%
 
-#### AIRLINES TO REMOVE:
-# Atlantic Southeast Airlines - Merged into ExpressJet in 2011
-# Airtran Airways - merged into Southwest in 2014
-# Continental Airlines - merged into United Airlines in 2012
-# ExpressJet - currently defunct (trying to come back)
-# Northwest Airlines - acquired by Delta in 2008(?)
-# US Airways - merged with American Airlines in 2013
-# Virgin America - acquired by Alaska Airlines in 2018
-
-abbr_companies = {# 'XE' : 'ExpressJet Airlines', --
-                  'YV' : 'Mesa Airlines',
-                  # 'NW' : 'Northwest Airlines',  --
+abbr_companies = {'YV' : 'Mesa Airlines',
                   'OH' : 'PSA Airlines',
                   'OO' : 'SkyWest Airlines',
                   'UA' : 'United Airlines',
-                  'US' : 'US Airways', # -- not working data cleaning
                   'WN' : 'Southwest Airlines',
-                  # 'EV' : 'Atlantic Southeast Airlines', --
                   'F9' : 'Frontier Airlines',
-                  'FL' : 'AirTran Airways', # -- not working data cleaning
                   'HA' : 'Hawaiian Airlines',
                   'MQ' : 'Envoy Air',
                   '9E' : 'Endeavor Air',
                   'AA' : 'American Airlines',
                   'AS' : 'Alaska Airlines',
                   'B6' : 'JetBlue Airways',
-                  # 'CO' : 'Continental Airlines', --
                   'DL' : 'Delta Air Lines',
-                  # 'VX' : 'Virgin America', --
                   'NK' : 'Spirit Airlines',
                   'G4' : 'Allegiant Air',
                   'YX' : 'Republic Airways'}
@@ -81,20 +66,15 @@ def get_stats(group):
     return {'min': group.min(), 'max': group.max(),
             'count': group.count(), 'mean': group.mean()}
 
-## DELAY STATS
-global_stats = dfa['DEP_DELAY'].groupby(dfa['CARRIER']).apply(get_stats).unstack()
-global_stats = global_stats.sort_values('count')
-global_stats
+## DEPARTURE DELAY STATS
+global_stats1 = dfa['DEP_DELAY'].groupby(dfa['CARRIER']).apply(get_stats).unstack()
+global_stats1 = global_stats.sort_values('count')
 
-#%%
-
-## DELAY STATS
+## ARRIVAL DELAY STATS
 global_stats2 = dfa['ARR_DELAY'].groupby(dfa['CARRIER']).apply(get_stats).unstack()
 global_stats2 = global_stats2.sort_values('count')
-global_stats2
 
-#%%
-
+# percentages for each classification
 delays1 = dfa.FLIGHT_STATUS1.value_counts(normalize=True)
 delays2 = dfa.FLIGHT_STATUS2.value_counts(normalize=True)
 
@@ -104,17 +84,22 @@ delays2 = dfa.FLIGHT_STATUS2.value_counts(normalize=True)
 Visualizations
 """
 
-# Horizonal Bar Chart - counts of flights per airline
+# Horizonal Bar Chart - proportion of flights per airline
+
+df_carrier = (dfa.groupby('CARRIER').size()/dfa['CARRIER'].count())*100
+df_carrier = df_carrier.rename('percent').reset_index()
+df_carrier = df_carrier.sort_values(by=['percent'])
 
 plt.figure(figsize=(20, 10))
-sns.set(font_scale=1.6)
-axis = sns.countplot(y=dfa['CARRIER'], order=dfa['CARRIER'].value_counts().iloc[0:18].index, data=dfa, orient="h", palette = 'bright')
-axis.set_xticklabels(axis.get_xticklabels(), rotation=45, ha='right')
-plt.title('Number of Flights by Airline', fontsize=24)
-plt.xlabel('Airline', fontsize=18)
-plt.ylabel('Number of Flights', fontsize=18)
-plt.tight_layout()
+axis = plt.barh(width='percent', y='CARRIER', data=df_carrier)
+plt.grid(alpha=0.3)
+
+plt.title('Airline Frequency', fontsize=22)
+plt.xlabel('Percentage of Flights', fontsize=16)
+plt.ylabel('Carrier', fontsize=16)
+
 plt.show()
+
 
 #%%
 
@@ -276,3 +261,22 @@ plt.ylabel('Airline', fontsize=14)
 plt.rc('xtick',labelsize=10)
 plt.rc('ytick',labelsize=10)
 plt.show()
+
+#%%
+
+# ALL numerical attributes
+dfa.hist(figsize = [15, 15],bins=9) 
+plt.show()
+
+#%%
+
+# ALL categorical attributes
+
+categoricals = ['CARRIER','ORIGIN',
+                'Year','Month','Day','WEEKDAY']
+
+fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(16,14), sharey=True)
+for col, ax in zip(categoricals, axes.flatten()):
+    (dfa.groupby(col).sum()['FLIGHT_STATUS1'].sort_values().plot.bar(ax=ax))
+    ax.set_title(col)
+fig.tight_layout()
