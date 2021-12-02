@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
+from sklearn.utils import resample
 
 #%%
 
@@ -79,14 +80,29 @@ fig.tight_layout()
 
 #%%
 
-### MODELING HERE WE GOOOOO
-# Datacamp logistic regression: https://www.datacamp.com/community/tutorials/understanding-logistic-regression-python
-
 # checking for multicollinearity ( heat map )
-plt.figure(figsize=(20,14))
-ax = sns.heatmap(df3.corr(), cmap='viridis', center=0, annot=True)
+X = df3.drop(['FLIGHT_STATUS1', 'FLIGHT_STATUS2', 'DEP_DELAY', 'ARR_DELAY'], axis=1)
+plt.figure(figsize=(26,18))
+ax = sns.heatmap(X.corr(), cmap='viridis', center=0, annot=True)
 bottom, top = ax.get_ylim()
-plt.text(0,-0.6, "Variable Multicollinearity (Heat Map)", fontsize = 30, color='Black', fontstyle='normal')
+plt.text(0,-0.6, "Variable Multicollinearity (Numerical Values)", fontsize = 30, color='Black', fontstyle='normal')
+ax.set_ylim(bottom + 0.5, top - 0.5)
+plt.yticks(rotation=0, fontsize=14)
+plt.xticks(rotation=45, fontsize=14)
+plt.show()
+
+# removing columns that show multicollinearity
+variables_to_remove = ['DISTANCE','AIR_TIME','WHEELS_ON','WHEELS_OFF',
+                       'SCHEDULED_ELAPSED_TIME',
+                       'SCHEDULED_DEP', 'SCHEDULED_ARR']
+df3.drop(variables_to_remove, axis=1, inplace=True)
+
+# checking for multicollinearity again ( heat map )
+X = df3.drop(['FLIGHT_STATUS1', 'FLIGHT_STATUS2', 'DEP_DELAY', 'ARR_DELAY'], axis=1)
+plt.figure(figsize=(26,18))
+ax = sns.heatmap(X.corr(), cmap='viridis', center=0, annot=True)
+bottom, top = ax.get_ylim()
+plt.text(0,-0.6, "Variable Multicollinearity (Numerical Values)", fontsize = 30, color='Black', fontstyle='normal')
 ax.set_ylim(bottom + 0.5, top - 0.5)
 plt.yticks(rotation=0, fontsize=14)
 plt.xticks(rotation=45, fontsize=14)
@@ -96,7 +112,7 @@ plt.show()
 
 def scaling_check1(data):
     
-    case_count = df3['FLIGHT_STATUS1'].value_counts() # 'data' is our input which will be any of the 3 dataframes created
+    case_count = data['FLIGHT_STATUS1'].value_counts()
     print('Legend:')
     print(case_count)
     
@@ -113,13 +129,12 @@ scaling_check1(df3)
 
 def scaling_check2(data):
     
-    case_count = df3['FLIGHT_STATUS2'].value_counts() # 'data' is our input which will be any of the 3 dataframes created
+    case_count = data['FLIGHT_STATUS2'].value_counts()
     print('Legend:')
     print(case_count)
-    labels = case_count.values
     plt.figure(figsize=(10,6))
     sns.barplot(x=case_count.index, y=case_count.values)    
-    plt.legend(labels=labels, title='Flight Count')
+    plt.legend()
     plt.title('Data Distribution', fontsize=16)
     plt.xlabel('Flight Status', fontsize=12)
     plt.ylabel('Number of Flights', fontsize=12)
@@ -128,6 +143,52 @@ def scaling_check2(data):
     plt.show()
 
 scaling_check2(df3)
+
+#%%
+
+# UPSAMPLING TO BALANCE CLASSES - FLIGHT_STATUS1
+
+# Separate majority and minority classes
+df_majority = df3[df3.FLIGHT_STATUS1==0]
+df_minority = df3[df3.FLIGHT_STATUS1==1]
+ 
+# Upsample minority class
+df_minority_upsampled = resample(df_minority, replace=True, n_samples=8081425, random_state=123)
+ 
+# Combine majority class with upsampled minority class
+df1_upsampled = pd.concat([df_majority, df_minority_upsampled])
+ 
+# Display new class counts
+df1_upsampled.FLIGHT_STATUS1.value_counts()
+
+# plot
+scaling_check1(df1_upsampled)
+
+#%%
+
+# UPSAMPLING TO BALANCE CLASSES - FLIGHT_STATUS2
+
+# Separate majority and minority classes
+df2_0 = df3[df3.FLIGHT_STATUS2==0]
+df2_1 = df3[df3.FLIGHT_STATUS2==1]
+df2_2 = df3[df3.FLIGHT_STATUS2==2]
+df2_3 = df3[df3.FLIGHT_STATUS2==3]
+df2_4 = df3[df3.FLIGHT_STATUS2==4]
+ 
+# Upsample minority class
+df2_1_upsampled = resample(df2_1, replace=True, n_samples=8081425, random_state=123)
+df2_2_upsampled = resample(df2_2, replace=True, n_samples=8081425, random_state=123)
+df2_3_upsampled = resample(df2_3, replace=True, n_samples=8081425, random_state=123)
+df2_4_upsampled = resample(df2_4, replace=True, n_samples=8081425, random_state=123)
+
+# Combine majority class with upsampled minority class
+df2_upsampled = pd.concat([df2_0, df2_1_upsampled, df2_2_upsampled, df2_3_upsampled, df2_4_upsampled])
+ 
+# Display new class counts
+df2_upsampled.FLIGHT_STATUS2.value_counts()
+
+# plot
+scaling_check2(df2_upsampled)
 
 #%%
 
@@ -171,24 +232,21 @@ def LogisticRegression1(df):
     X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.25,random_state=0)
     
     # instantiate the model
-    logreg = LogisticRegression(max_iter=500, class_weight="balanced")
+    logreg = LogisticRegression(max_iter=200, class_weight="balanced")
     
     # fit the model with data
     fit = logreg.fit(X_train,y_train)
 
     #
     y_pred=fit.predict(X_test)
-
-
-    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
-
-    print(cnf_matrix)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred))
-    print("Recall:",metrics.recall_score(y_test, y_pred))
-
+    
+    # metrics results
+    print("\nAccuracy for Logistic Regression: {:.6} %".format(accuracy_score(y_test,y_pred) * 100))
+    print("\nPrecision for Logistic Regression: {:.6} %".format(metrics.precision_score(y_test, y_pred) * 100))
+    print("\nRecall for Logistic Regression: {:.6} %".format(metrics.recall_score(y_test, y_pred) * 100))
 
     # confusion matrix plot
+    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
 
     class_names=[0,1] # name  of classes
     fig, ax = plt.subplots()
@@ -213,7 +271,7 @@ def LogisticRegression1(df):
     plt.legend(loc=4)
     plt.show()    
 
-LogisticRegression1(df3)
+LogisticRegression1(df1_upsampled)
 
 #%%
 
@@ -265,16 +323,16 @@ def LogisticRegression2(df):
 
     #
     y_pred=fit.predict(X_test)
-
-
-    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
-
-    print(cnf_matrix)
-    print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
-    print("Precision:",metrics.precision_score(y_test, y_pred, average='weighted'))
-    print("Recall:",metrics.recall_score(y_test, y_pred, average='weighted')) 
     
-    plot_confusion_matrix(fit, X, y, values_format='.3g')
+    # metrics results
+    print("\nAccuracy for Logistic Regression: {:.6} %".format(accuracy_score(y_test,y_pred) * 100))
+    print("\nPrecision for Logistic Regression: {:.6} %".format(metrics.precision_score(y_test, y_pred, average='weighted') * 100))
+    print("\nRecall for Logistic Regression: {:.6} %".format(metrics.recall_score(y_test, y_pred, average='weighted') * 100))
+    
+    
+    # plot confusion matrix
+    fig, ax = plt.subplots(figsize=(10, 10))
+    plot_confusion_matrix(fit, X, y, ax=ax)
     plt.show()
 
-LogisticRegression2(df3)
+LogisticRegression2(df2_upsampled)
