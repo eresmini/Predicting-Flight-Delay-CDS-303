@@ -215,13 +215,7 @@ def RandomForest1(df):
     print("%0.2f accuracy with a standard deviation of %0.4f" % (scores.mean(), scores.std()))
         
 RandomForest1(df3)
-#%%
 
-carriers = list(df3.CARRIER.unique())
-
-for carrier in carriers:
-    print(carrier)
-    RandomForest1(df3, carrier)
 
 #%% ---------------------------------------------------------------------------
 
